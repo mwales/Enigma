@@ -255,6 +255,10 @@ public class Gui {
 					case KeyEvent.VK_T:
 						m_toggleMappingMenu.doClick();
 					break;
+          
+          case KeyEvent.VK_W:
+            defogString();
+            break;
 				}
 			}
 		});
@@ -674,6 +678,57 @@ public class Gui {
 		m_frame.setVisible(true);
 		m_frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 	}
+  
+  public void defogString()
+  {
+    int caretMark = m_editor.getCaret().getMark();
+    System.out.println("Defog string at mark " + Integer.toString(caretMark));
+    
+    // Find the quote before the mark
+    String src = m_editor.getText();
+    int beginString = caretMark;
+    int endString = caretMark;
+    
+    for(; beginString >= 0; beginString--)
+    {
+      if (src.charAt(beginString) == '"')
+      {
+        System.out.println("Found the beginning of the quote at " + Integer.toString(beginString));
+        break;
+      }
+    }
+    
+    if (beginString < 0)
+    {
+      System.out.println("Couldn't find the beginning of the string");
+      return;
+    }
+    
+    // Find the quote after the mark
+      for(; endString < src.length(); endString++)
+    {
+      if (src.charAt(endString) == '"')
+      {
+        System.out.println("Found the end of the quote at " + Integer.toString(endString));
+        break;
+      }
+    }
+    
+    if (endString >= src.length())
+    {
+      System.out.println("Couldn't find the end of the string");
+      return;
+    }
+    
+    String textToDefog = src.substring(beginString + 1, endString);
+    System.out.println("Defogging the string " + textToDefog);
+    
+    
+    String newText = src.substring(0, beginString + 1) + "fatalbert" + src.substring(endString - 1);
+    m_editor.setText(newText);
+    m_editor.getCaret.setDot(caretMark);
+
+  }
 	
 	public JFrame getFrame() {
 		return m_frame;
@@ -883,6 +938,17 @@ public class Gui {
 		
 		Token token = m_controller.getToken(pos);
 		boolean isToken = token != null;
+    
+    if (isToken)
+    {
+      System.out.println("MDW: " + token.toString());
+    }
+    else
+    {
+      System.out.println("MDW: Not token (pos = " + Integer.toString(pos) + ")");
+    }
+    
+    System.out.println("MDW: Mark = " + Integer.toString(m_editor.getCaret().getMark()));
 		
 		m_reference = m_controller.getDeobfReference(token);
 		boolean isClassEntry = isToken && m_reference.entry instanceof ClassEntry;
