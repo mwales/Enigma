@@ -759,13 +759,16 @@ public class Gui {
 		String defoggedString = defog(m_caretString, defogKey);
 		
 		m_undoDefog.put(defoggedString, m_caretString);
+    System.out.println("Adding " + defoggedString + " => " + m_caretString + " to map");
 		
     String src = m_editor.getText();
     int caretMark = m_editor.getCaret().getMark();
     
-		String newText = src.substring(0, m_stringStart + 1) + defoggedString + src.substring(m_stringStop - 1);
+		String newText = src.substring(0, m_stringStart + 1) + defoggedString + src.substring(m_stringStop);
 		m_editor.setText(newText);
 		m_editor.getCaret().setDot(caretMark);
+    
+    redraw();
 
 	}
   
@@ -819,9 +822,11 @@ public class Gui {
       String src = m_editor.getText();
       int caretMark = m_editor.getCaret().getMark();
       
-			String newText = src.substring(0, m_stringStart + 1) + m_undoDefog.get(m_caretString) + src.substring(m_stringStop - 1);
+			String newText = src.substring(0, m_stringStart + 1) + m_undoDefog.get(m_caretString) + src.substring(m_stringStop);
 			m_editor.setText(newText);
 			m_editor.getCaret().setDot(caretMark);
+      
+      redraw();
 			
 		}
 		else
@@ -829,6 +834,7 @@ public class Gui {
 			System.out.println("Nothing to undo " + m_caretString + " with");
 		}
 
+    
 	}
   
 	public JFrame getFrame() {
