@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.jar.JarFile;
 import java.awt.datatransfer.*;
 import java.awt.Toolkit;
@@ -134,6 +136,13 @@ public class Gui {
 	private JFileChooser m_mappingsFileChooser;
 	private JFileChooser m_exportSourceFileChooser;
 	private JFileChooser m_exportJarFileChooser;
+  
+	// defog stuff
+	private int m_stringStart;
+	private int m_stringStop;
+	private boolean m_stringFound;
+	private String m_caretString;
+	private HashMap<String, String> m_undoDefog;
 	
 	public Gui() {
 		
@@ -255,13 +264,23 @@ public class Gui {
 					case KeyEvent.VK_T:
 						m_toggleMappingMenu.doClick();
 					break;
-          
-          case KeyEvent.VK_W:
-            defogString();
-            break;
+
+					case KeyEvent.VK_W:
+						findAndDefogString(1);
+						break;
+						
+					case KeyEvent.VK_E:
+						findAndDefogString(2);
+						break;
+						
+					case KeyEvent.VK_U:
+						undoDefogString();
+						break;
 				}
 			}
 		});
+    
+    m_undoDefog = new HashMap<String, String>();
 		
 		// turn off token highlighting (it's wrong most of the time anyway...)
 		DefaultSyntaxKit kit = (DefaultSyntaxKit)m_editor.getEditorKit();
@@ -679,57 +698,139 @@ public class Gui {
 		m_frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 	}
   
-  public void defogString()
-  {
-    int caretMark = m_editor.getCaret().getMark();
-    System.out.println("Defog string at mark " + Integer.toString(caretMark));
+	public boolean findStringUnderCaret()
+	{
+		int caretMark = m_editor.getCaret().getMark();
+		System.out.println("Caret at mark " + Integer.toString(caretMark));
+		
+		// Find the quote before the mark
+		String src = m_editor.getText();
+		int beginString = caretMark;
+		int endString = caretMark;
+		
+		for(; beginString >= 0; beginString--)
+		{
+			if (src.charAt(beginString) == '"')
+			{
+				System.out.println("Found the beginning of the quote at " + Integer.toString(beginString));
+				break;
+			}
+		}
+		
+		if (beginString < 0)
+		{
+			System.out.println("Couldn't find the beginning of the string");
+			return false;
+		}
+		
+		// Find the quote after the mark
+			for(; endString < src.length(); endString++)
+		{
+			if (src.charAt(endString) == '"')
+			{
+				System.out.println("Found the end of the quote at " + Integer.toString(endString));
+				break;
+			}
+		}
+		
+		if (endString >= src.length())
+		{
+			System.out.println("Couldn't find the end of the string");
+			return false;
+		}
+		
+		// Success
+		m_caretString = src.substring(beginString + 1, endString);
+		m_stringStart = beginString;
+		m_stringStop = endString;
+		
+		System.out.println("Found the string " + m_caretString);
+		
+		return true;
+	}
+  
     
-    // Find the quote before the mark
+  
+	public void findAndDefogString(int defogKey)
+	{
+		if (!findStringUnderCaret())
+			return;
+		
+		String defoggedString = defog(m_caretString, defogKey);
+		
+		m_undoDefog.put(defoggedString, m_caretString);
+		
     String src = m_editor.getText();
-    int beginString = caretMark;
-    int endString = caretMark;
+    int caretMark = m_editor.getCaret().getMark();
     
-    for(; beginString >= 0; beginString--)
-    {
-      if (src.charAt(beginString) == '"')
-      {
-        System.out.println("Found the beginning of the quote at " + Integer.toString(beginString));
-        break;
-      }
-    }
-    
-    if (beginString < 0)
-    {
-      System.out.println("Couldn't find the beginning of the string");
-      return;
-    }
-    
-    // Find the quote after the mark
-      for(; endString < src.length(); endString++)
-    {
-      if (src.charAt(endString) == '"')
-      {
-        System.out.println("Found the end of the quote at " + Integer.toString(endString));
-        break;
-      }
-    }
-    
-    if (endString >= src.length())
-    {
-      System.out.println("Couldn't find the end of the string");
-      return;
-    }
-    
-    String textToDefog = src.substring(beginString + 1, endString);
-    System.out.println("Defogging the string " + textToDefog);
-    
-    
-    String newText = src.substring(0, beginString + 1) + "fatalbert" + src.substring(endString - 1);
-    m_editor.setText(newText);
-    m_editor.getCaret.setDot(caretMark);
+		String newText = src.substring(0, m_stringStart + 1) + defoggedString + src.substring(m_stringStop - 1);
+		m_editor.setText(newText);
+		m_editor.getCaret().setDot(caretMark);
 
-  }
-	
+	}
+  
+	private String key1 = "I Love Android";
+	private String key2 = "Y9*PI8B#gD^6Yhd1";
+  
+  private String defog(String fogged, int keyIndex)
+	{
+		Base64.Decoder b64Dec = Base64.getDecoder();
+		byte decBytes[] = b64Dec.decode(fogged);
+
+
+		String key = "";
+		if (keyIndex == 1)
+		{
+			key = key1;
+		}
+		else
+		{
+			key = key2;
+		}
+		int keyLenMod = key.length() / 2;
+
+		System.out.println(fogged + " decoded into " + Integer.toString(decBytes.length) + " bytes");
+
+		//List<byte> solBytes = new List<byte>();
+		byte solBytes[] = new byte[decBytes.length];
+
+		for(int curByte = 0; curByte < decBytes.length; curByte++)
+		{
+			byte keyByte = key.getBytes()[curByte % keyLenMod * 2];
+			solBytes[curByte] = (byte) (decBytes[curByte] ^ keyByte);
+
+			System.out.println("Single = " + Integer.toString(decBytes[curByte] ^ keyByte) + " = " + Integer.toString(solBytes[curByte]));
+		}
+
+		System.out.println("Together = " + solBytes);
+		return new String(solBytes);
+
+	}
+
+
+	public void undoDefogString()
+	{
+		if (!findStringUnderCaret())
+			return;
+			
+		if (m_undoDefog.containsKey(m_caretString))
+		{
+			// Undo the defog
+      String src = m_editor.getText();
+      int caretMark = m_editor.getCaret().getMark();
+      
+			String newText = src.substring(0, m_stringStart + 1) + m_undoDefog.get(m_caretString) + src.substring(m_stringStop - 1);
+			m_editor.setText(newText);
+			m_editor.getCaret().setDot(caretMark);
+			
+		}
+		else
+		{
+			System.out.println("Nothing to undo " + m_caretString + " with");
+		}
+
+	}
+  
 	public JFrame getFrame() {
 		return m_frame;
 	}
