@@ -26,10 +26,32 @@ In order to build Enigma, you need to have OpenJDK development tools and gradle 
 
 Note: New versions of gradle won't work. Gradle 2.14.1 is the version that I finally got to work
 
+I installed gradle by doing the following:
+
+## Install gradle
+
+Install SdkMan
+
+Website with directions and details:  https://sdkman.io
+
+Basically boiled down to:
+
 ```
-gradle clean
-gradle build
-gradle jar
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install gradle 2.14.1
+```
+
+## Building Enigma
+
+I already had JDK installed.  It was having issues with the default versions, so I had it use 1.8 HotSpot 
+version by controlling the path environment variable before calling gradle
+
+
+```
+PATH=/opt/jdk1.8.0_102/bin:$PATH; gradle clean
+PATH=/opt/jdk1.8.0_102/bin:$PATH; gradle build
+PATH=/opt/jdk1.8.0_102/bin:$PATH; gradle jar
 ```
 
 Build files are located in `build/libs/`. `enigma-0.10.4b-all.jar` is the one you are looking for :-)
