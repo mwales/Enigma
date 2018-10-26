@@ -25,6 +25,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -275,6 +276,10 @@ public class Gui {
 						
 					case KeyEvent.VK_U:
 						undoDefogString();
+						break;
+						
+					case KeyEvent.VK_Y:
+						copyTextToClipboard();
 						break;
 				}
 			}
@@ -696,6 +701,13 @@ public class Gui {
 		m_frame.setMinimumSize(new Dimension(640, 480));
 		m_frame.setVisible(true);
 		m_frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+	}
+	
+	public void copyTextToClipboard()
+	{
+		String text = m_editor.getText();
+		StringSelection ss = new StringSelection(text);
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
 	}
   
 	public boolean findStringUnderCaret()
